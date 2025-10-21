@@ -229,11 +229,11 @@
 
         <div id="configError" class="config-error" style="display: none;">
             <h3>❌ Ошибка конфигурации</h3>
-            <p>Не настроены Supabase credentials!</p>
-            <p>Открой файл <strong>config.js</strong> и замени:</p>
+            <p>Не найдены переменные окружения Supabase!</p>
+            <p>Убедитесь что в Vercel установлены:</p>
             <ul>
-                <li><code>your-project.supabase.co</code> на твой Supabase URL</li>
-                <li><code>your-anon-key</code> на твой Supabase anon key</li>
+                <li><code>SUPABASE_URL</code></li>
+                <li><code>SUPABASE_ANON_KEY</code></li>
             </ul>
         </div>
 
@@ -273,7 +273,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
