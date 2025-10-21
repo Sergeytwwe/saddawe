@@ -1,10 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 export default async function handler(req, res) {
-  // Настройка CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -12,51 +10,55 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      console.log('Connecting to Supabase with ANON key...');
+      console.log('=== DEBUG INFO ===');
+      console.log('SUPABASE_URL exists:', !!process.env.SUPABASE_URL);
+      console.log('SUPABASE_ANON_KEY exists:', !!process.env.SUPABASE_ANON_KEY);
       
-      // Проверяем environment variables
-      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-        throw new Error('Missing Supabase environment variables');
+      if (process.env.SUPABASE_URL) {
+        console.log('SUPABASE_URL:', process.env.SUPABASE_URL.substring(0, 20) + '...');
+      }
+      if (process.env.SUPABASE_ANON_KEY) {
+        console.log('SUPABASE_ANON_KEY starts with:', process.env.SUPABASE_ANON_KEY.substring(0, 20) + '...');
       }
 
-      // Создаем клиент Supabase с ANON ключом
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+        throw new Error('Missing environment variables');
+      }
+
       const supabase = createClient(
         process.env.SUPABASE_URL,
         process.env.SUPABASE_ANON_KEY
       );
 
-      console.log('Fetching data from user_warns table...');
-
-      // Получаем данные из таблицы
+      console.log('Fetching from user_warns...');
+      
       const { data: warns, error } = await supabase
         .from('user_warns')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase Error:', error);
         throw error;
       }
 
-      console.log(`Found ${warns?.length || 0} warnings`);
-
-      // Возвращаем данные
+      console.log('Success! Found warns:', warns?.length || 0);
+      
+      // Если данных нет, возвращаем пустой массив
       res.status(200).json(warns || []);
 
     } catch (error) {
-      console.error('API Error:', error);
+      console.error('FULL ERROR:', error);
       
-      // Возвращаем тестовые данные если ошибка
-      const testData = [
-        {
-          id: 1,
-          user_id: "fallback_user",
-          reason: "Тест из API (ошибка: " + error.message + ")",
-          created_at: new Date().toISOString()
+      // Возвращаем ошибку чтобы увидеть в браузере
+      res.status(500).json({ 
+        error: error.message,
+        details: 'Check Vercel logs for full error',
+        envCheck: {
+          hasUrl: !!process.env.SUPABASE_URL,
+          hasKey: !!process.env.SUPABASE_ANON_KEY
         }
-      ];
-      
-      res.status(200).json(testData);
+      });
     }
   } else {
     res.status(405).json({ error: 'Method not allowed' });
