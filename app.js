@@ -1,23 +1,29 @@
 // app.js
-// Инициализация Supabase из переменных окружения Vercel
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+// Переменные будут установлены через Vercel во время сборки
+// Но в браузере process.env не работает, поэтому нужен обходной путь
 
-console.log('Environment variables:', { 
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseAnonKey,
-    url: supabaseUrl ? supabaseUrl.substring(0, 20) + '...' : 'empty',
+// Для Vercel - создадим конфиг прямо в коде
+// Эти значения будут заменены во время сборки
+const supabaseUrl = '%%SUPABASE_URL%%';
+const supabaseAnonKey = '%%SUPABASE_ANON_KEY%%';
+
+console.log('Supabase config:', { 
+    url: supabaseUrl,
     key: supabaseAnonKey ? '***' + supabaseAnonKey.slice(-4) : 'empty'
 });
 
 // Проверяем что переменные загружены
 function checkConfig() {
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey || 
+        supabaseUrl === '%%SUPABASE_URL%%' || 
+        supabaseAnonKey === '%%SUPABASE_ANON_KEY%%') {
+        
         document.getElementById('configError').style.display = 'block';
         document.querySelector('.controls').style.display = 'none';
         document.querySelector('.warns-container').style.display = 'none';
         
-        console.error('❌ Supabase environment variables not found!');
+        console.error('❌ Supabase environment variables not configured!');
+        showError('Не настроены переменные окружения Supabase. Проверьте настройки Vercel.');
         return false;
     }
     return true;
@@ -36,23 +42,33 @@ let supabase;
 
 // Загрузка данных при старте
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, checking config...');
+    
     // Проверяем конфигурацию
     if (!checkConfig()) {
         return;
     }
 
     // Инициализируем Supabase
-    supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-    
-    console.log('Supabase клиент инициализирован');
-    testConnection();
-    loadWarns();
-    loadStats();
+    try {
+        supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+        console.log('Supabase клиент инициализирован');
+        
+        // Тестируем подключение и загружаем данные
+        testConnection().then(() => {
+            loadWarns();
+            loadStats();
+        });
+    } catch (err) {
+        console.error('Ошибка инициализации Supabase:', err);
+        showError('Ошибка инициализации: ' + err.message);
+    }
 });
 
 // Тест подключения к Supabase
 async function testConnection() {
     try {
+        console.log('Testing Supabase connection...');
         const { data, error } = await supabase
             .from('user_warns')
             .select('id')
@@ -61,12 +77,15 @@ async function testConnection() {
         if (error) {
             console.error('Ошибка подключения к Supabase:', error);
             showError('Ошибка подключения к базе данных: ' + error.message);
+            return false;
         } else {
             console.log('✅ Подключение к Supabase успешно');
+            return true;
         }
     } catch (err) {
         console.error('Критическая ошибка:', err);
         showError('Критическая ошибка: ' + err.message);
+        return false;
     }
 }
 
@@ -74,6 +93,7 @@ async function testConnection() {
 async function loadWarns() {
     try {
         showsLoading();
+        console.log('Loading warns...');
         
         let query = supabase
             .from('user_warns')
@@ -102,6 +122,8 @@ async function loadWarns() {
 // Загрузка статистики
 async function loadStats() {
     try {
+        console.log('Loading stats...');
+        
         // Общее количество предупреждений
         const { count: totalCount, error: totalError } = await supabase
             .from('user_warns')
@@ -133,6 +155,8 @@ async function loadStats() {
         totalWarns.textContent = totalCount || 0;
         todayWarns.textContent = todayCount || 0;
         uniqueUsers.textContent = uniqueUsersSet.size;
+
+        console.log('Stats loaded:', { totalCount, todayCount, uniqueUsers: uniqueUsersSet.size });
 
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
@@ -214,27 +238,3 @@ function formatDate(dateString) {
         return 'Неверная дата';
     }
 }
-
-// Реал-тайм обновления (опционально)
-function subscribeToUpdates() {
-    if (!supabase) return;
-    
-    supabase
-        .channel('user_warns_changes')
-        .on('postgres_changes', 
-            { 
-                event: '*', 
-                schema: 'public', 
-                table: 'user_warns' 
-            }, 
-            () => {
-                console.log('Обнаружены изменения в базе данных, обновляем...');
-                loadWarns();
-                loadStats();
-            }
-        )
-        .subscribe();
-}
-
-// Активируем реал-тайм обновления (раскомментируйте если нужно)
-// subscribeToUpdates();
