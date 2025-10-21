@@ -1,52 +1,167 @@
-<script>
-async function loadWarns() {
-    const container = document.getElementById('warns-container')
-    
-    try {
-        container.innerHTML = '<div class="loading">Загрузка реальных данных...</div>'
-        
-        const response = await fetch('/api/warns')
-        const result = await response.json()
-        
-        if (!response.ok) {
-            throw new Error(`API Error: ${JSON.stringify(result)}`)
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список предупреждений</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .warn-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #ff6b6b;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #c62828;
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📋 Список предупреждений</h1>
+    <div id="warns-container">
+        <div class="loading">Загрузка данных...</div>
+    </div>
+
+    <script>
+        async function loadWarns() {
+            const container = document.getElementById('warns-container')
+            
+            try {
+                container.innerHTML = '<div class="loading">🔄 Загрузка данных из Supabase...</div>'
+                
+                console.log('Fetching from /api/warns...')
+                const response = await fetch('/api/warns')
+                const result = await response.json()
+                
+                console.log('API Response:', result)
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка API: ${response.status} - ${JSON.stringify(result)}`)
+                }
+
+                container.innerHTML = ''
+
+                if (!result || result.length === 0) {
+                    container.innerHTML = `
+                        <div class="warn-item">
+                            ✅ В таблице user_warns нет предупреждений
+                            <div class="success">
+                                Подключение к Supabase работает! Таблица пустая.
+                            </div>
+                        </div>
+                    `
+                    return
+                }
+
+                // Отображаем данные из Supabase
+                result.forEach(warn => {
+                    const warnElement = document.createElement('div')
+                    warnElement.className = 'warn-item'
+                    
+                    const date = new Date(warn.created_at).toLocaleDateString('ru-RU')
+                    const time = new Date(warn.created_at).toLocaleTimeString('ru-RU')
+                    
+                    warnElement.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <strong>👤 Пользователь:</strong> ${warn.user_id}<br>
+                                <strong>📝 Причина:</strong> ${warn.reason || 'Не указана'}<br>
+                                <strong>📅 Дата:</strong> ${date} ${time}
+                            </div>
+                            <small style="color: #666;">ID: ${warn.id}</small>
+                        </div>
+                    `
+                    
+                    container.appendChild(warnElement)
+                })
+
+                // Показываем статистику
+                const stats = document.createElement('div')
+                stats.className = 'success'
+                stats.innerHTML = `✅ Успешно загружено ${result.length} предупреждений из Supabase`
+                container.appendChild(stats)
+
+            } catch (error) {
+                console.error('Frontend Error:', error)
+                container.innerHTML = `
+                    <div class="error">
+                        ❌ Ошибка загрузки данных
+                        <br><br>
+                        <strong>Детали:</strong> ${error.message}
+                        <br><br>
+                        <strong>Что проверить:</strong>
+                        <ul style="text-align: left; margin: 10px 0;">
+                            <li>Environment Variables в Vercel</li>
+                            <li>API route /api/warns работает</li>
+                            <li>Supabase таблица user_warns существует</li>
+                        </ul>
+                        <button onclick="location.reload()">🔄 Обновить страницу</button>
+                        <button onclick="testAPI()">🧪 Тестировать API</button>
+                    </div>
+                `
+            }
         }
 
-        container.innerHTML = ''
-
-        if (!result || result.length === 0) {
-            container.innerHTML = '<div class="warn-item">✅ В таблице нет предупреждений</div>'
-            return
+        // Функция для тестирования API
+        async function testAPI() {
+            try {
+                const response = await fetch('/api/warns')
+                const result = await response.json()
+                alert(`API Test:\nStatus: ${response.status}\nData: ${JSON.stringify(result, null, 2)}`)
+            } catch (error) {
+                alert(`API Test Failed:\n${error.message}`)
+            }
         }
 
-        // Отображаем данные из Supabase
-        result.forEach(warn => {
-            const warnElement = document.createElement('div')
-            warnElement.className = 'warn-item'
-            
-            const date = new Date(warn.created_at).toLocaleDateString('ru-RU')
-            
-            warnElement.innerHTML = `
-                <strong>👤 Пользователь:</strong> ${warn.user_id}<br>
-                <strong>📝 Причина:</strong> ${warn.reason || 'Не указана'}<br>
-                <strong>📅 Дата:</strong> ${date}
-                <small style="color: #666; display: block; margin-top: 5px;">ID: ${warn.id}</small>
-            `
-            
-            container.appendChild(warnElement)
+        // Загружаем данные при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadWarns)
+
+        // Добавляем кнопку обновления внизу
+        document.addEventListener('DOMContentLoaded', function() {
+            const refreshBtn = document.createElement('button')
+            refreshBtn.textContent = '🔄 Обновить данные'
+            refreshBtn.onclick = loadWarns
+            refreshBtn.style.marginTop = '20px'
+            document.body.appendChild(refreshBtn)
         })
-
-    } catch (error) {
-        console.error('Frontend Error:', error)
-        container.innerHTML = `
-            <div class="error">
-                ❌ Ошибка: ${error.message}
-                <br><br>
-                <button onclick="location.reload()">Обновить страницу</button>
-            </div>
-        `
-    }
-}
-
-document.addEventListener('DOMContentLoaded', loadWarns)
-</script>
+    </script>
+</body>
+</html>
