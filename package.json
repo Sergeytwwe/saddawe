@@ -1,5 +1,10 @@
 {
-  "name": "warns-site",
+  "name": "supabase-warns-site",
   "version": "1.0.0",
-  "type": "module"
+  "scripts": {
+    "build": "mkdir -p public && cp index.html public/ && cp app.js public/"
+  },
+  "devDependencies": {
+    "@vercel/static-build": "^1.0.0"
+  }
 }
