@@ -1,11 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Simple Site</title>
+    <title>Список предупреждений</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .warn-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #ff6b6b;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-    a
+    <h1>📋 Список предупреждений</h1>
+    <div id="warns-container">
+        <div class="loading">Загрузка...</div>
+    </div>
+
+    <script>
+        async function loadWarns() {
+            const container = document.getElementById('warns-container')
+            
+            try {
+                const response = await fetch('/api/warns')
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
+                }
+                
+                const warns = await response.json()
+
+                container.innerHTML = ''
+
+                if (warns.length === 0) {
+                    container.innerHTML = '<div class="warn-item">Предупреждений нет</div>'
+                    return
+                }
+
+                // Отображаем каждый варн
+                warns.forEach(warn => {
+                    const warnElement = document.createElement('div')
+                    warnElement.className = 'warn-item'
+                    
+                    const date = new Date(warn.created_at).toLocaleDateString('ru-RU')
+                    
+                    warnElement.innerHTML = `
+                        <strong>👤 Пользователь:</strong> ${warn.user_id}<br>
+                        <strong>📝 Причина:</strong> ${warn.reason || 'Не указана'}<br>
+                        <strong>📅 Дата:</strong> ${date}
+                    `
+                    
+                    container.appendChild(warnElement)
+                })
+
+            } catch (error) {
+                console.error('Ошибка:', error)
+                container.innerHTML = `
+                    <div class="error">
+                        ❌ Ошибка загрузки: ${error.message}
+                    </div>
+                `
+            }
+        }
+
+        // Загружаем данные при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadWarns)
+    </script>
 </body>
 </html>
