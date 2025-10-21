@@ -184,6 +184,27 @@
             font-style: italic;
         }
 
+        .config-error {
+            background: #fff3cd;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+        }
+
+        .config-error h3 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .config-error code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
         @media (max-width: 768px) {
             .warns-header, .warn-item {
                 grid-template-columns: 60px 1fr 1fr;
@@ -204,6 +225,16 @@
         <div class="header">
             <h1>🔔 Система предупреждений</h1>
             <p>Мониторинг и управление предупреждениями пользователей</p>
+        </div>
+
+        <div id="configError" class="config-error" style="display: none;">
+            <h3>❌ Ошибка конфигурации</h3>
+            <p>Не настроены Supabase credentials!</p>
+            <p>Открой файл <strong>config.js</strong> и замени:</p>
+            <ul>
+                <li><code>your-project.supabase.co</code> на твой Supabase URL</li>
+                <li><code>your-anon-key</code> на твой Supabase anon key</li>
+            </ul>
         </div>
 
         <div class="controls">
@@ -242,6 +273,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
