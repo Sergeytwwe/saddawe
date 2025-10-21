@@ -1,7 +1,9 @@
 // Инициализация Supabase
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+// Эти переменные будут установлены вручную или через Vercel
+const supabaseUrl = 'https://your-project.supabase.co'; // ЗАМЕНИТЕ на ваш URL
+const supabaseAnonKey = 'your-anon-key'; // ЗАМЕНИТЕ на ваш ключ
 
+// Инициализируем клиент Supabase
 const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 // Элементы DOM
@@ -16,6 +18,8 @@ let currentSearchUserId = '';
 
 // Загрузка данных при старте
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Supabase клиент инициализирован');
+    console.log('URL:', supabaseUrl);
     loadWarns();
     loadStats();
 });
@@ -41,6 +45,7 @@ async function loadWarns() {
             throw error;
         }
 
+        console.log('Загружено предупреждений:', warns?.length);
         displayWarns(warns);
     } catch (error) {
         console.error('Ошибка загрузки предупреждений:', error);
@@ -72,19 +77,16 @@ async function loadStats() {
         // Уникальные пользователи
         const { data: uniqueUsersData, error: uniqueError } = await supabase
             .from('user_warns')
-            .select('user_id')
-            .then(response => {
-                if (response.error) throw response.error;
-                const unique = new Set(response.data.map(item => item.user_id));
-                return { data: Array.from(unique), error: null };
-            });
+            .select('user_id');
 
         if (uniqueError) throw uniqueError;
+
+        const uniqueUsersSet = new Set(uniqueUsersData.map(item => item.user_id));
 
         // Обновляем статистику
         totalWarns.textContent = totalCount || 0;
         todayWarns.textContent = todayCount || 0;
-        uniqueUsers.textContent = uniqueUsersData ? uniqueUsersData.length : 0;
+        uniqueUsers.textContent = uniqueUsersSet.size;
 
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
@@ -143,6 +145,7 @@ function showError(message) {
 }
 
 function escapeHtml(unsafe) {
+    if (!unsafe) return '';
     return unsafe
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -152,34 +155,16 @@ function escapeHtml(unsafe) {
 }
 
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleString('ru-RU', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return 'Неверная дата';
+    }
 }
-
-// Реал-тайм обновление (опционально)
-function subscribeToUpdates() {
-    supabase
-        .channel('user_warns_changes')
-        .on('postgres_changes', 
-            { 
-                event: '*', 
-                schema: 'public', 
-                table: 'user_warns' 
-            }, 
-            () => {
-                // При любых изменениях в таблице обновляем данные
-                loadWarns();
-                loadStats();
-            }
-        )
-        .subscribe();
-}
-
-// Активируем реал-тайм обновления (раскомментируйте если нужно)
-// subscribeToUpdates();
