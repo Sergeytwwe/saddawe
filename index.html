@@ -1,77 +1,52 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Список предупреждений</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+<script>
+async function loadWarns() {
+    const container = document.getElementById('warns-container')
+    
+    try {
+        container.innerHTML = '<div class="loading">Загрузка реальных данных...</div>'
+        
+        const response = await fetch('/api/warns')
+        const result = await response.json()
+        
+        if (!response.ok) {
+            throw new Error(`API Error: ${JSON.stringify(result)}`)
         }
-        .warn-item {
-            background: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-left: 4px solid #ff6b6b;
-        }
-        .loading {
-            text-align: center;
-            color: #666;
-        }
-        .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
-        }
-    </style>
-</head>
-<body>
-    <h1>📋 Список предупреждений</h1>
-    <div id="warns-container">
-        <div class="loading">Загрузка...</div>
-    </div>
 
-    <script>
-        async function loadWarns() {
-            const container = document.getElementById('warns-container')
+        container.innerHTML = ''
+
+        if (!result || result.length === 0) {
+            container.innerHTML = '<div class="warn-item">✅ В таблице нет предупреждений</div>'
+            return
+        }
+
+        // Отображаем данные из Supabase
+        result.forEach(warn => {
+            const warnElement = document.createElement('div')
+            warnElement.className = 'warn-item'
             
-            try {
-                // Показываем тестовые данные для проверки
-                container.innerHTML = `
-                    <div class="warn-item">
-                        <strong>👤 Пользователь:</strong> test_user_123<br>
-                        <strong>📝 Причина:</strong> Тестовое предупреждение<br>
-                        <strong>📅 Дата:</strong> ${new Date().toLocaleDateString('ru-RU')}
-                    </div>
-                    <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
-                        <strong>Статус:</strong> HTML работает! API нужно настроить отдельно.
-                    </div>
-                `;
+            const date = new Date(warn.created_at).toLocaleDateString('ru-RU')
+            
+            warnElement.innerHTML = `
+                <strong>👤 Пользователь:</strong> ${warn.user_id}<br>
+                <strong>📝 Причина:</strong> ${warn.reason || 'Не указана'}<br>
+                <strong>📅 Дата:</strong> ${date}
+                <small style="color: #666; display: block; margin-top: 5px;">ID: ${warn.id}</small>
+            `
+            
+            container.appendChild(warnElement)
+        })
 
-                // Пробуем загрузить реальные данные
-                const response = await fetch('/api/warns');
-                
-                if (response.ok) {
-                    const warns = await response.json();
-                    console.log('Данные получены:', warns);
-                } else {
-                    console.log('API пока не настроен');
-                }
+    } catch (error) {
+        console.error('Frontend Error:', error)
+        container.innerHTML = `
+            <div class="error">
+                ❌ Ошибка: ${error.message}
+                <br><br>
+                <button onclick="location.reload()">Обновить страницу</button>
+            </div>
+        `
+    }
+}
 
-            } catch (error) {
-                console.log('API route еще не готов');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', loadWarns);
-    </script>
-</body>
-</html>
+document.addEventListener('DOMContentLoaded', loadWarns)
+</script>
