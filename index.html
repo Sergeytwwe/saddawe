@@ -3,165 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Список предупреждений</title>
+    <title>Система предупреждений</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
         }
-        .warn-item {
-            background: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-left: 4px solid #ff6b6b;
-        }
-        .loading {
+
+        .header {
             text-align: center;
-            color: #666;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
             padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
-        .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            border-left: 4px solid #c62828;
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        button {
-            background: #2196f3;
+
+        .search-box input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .search-box button {
+            padding: 10px 20px;
+            background: #667eea;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
+            font-size: 16px;
         }
-        button:hover {
-            background: #1976d2;
+
+        .search-box button:hover {
+            background: #5a6fd8;
         }
-        .success {
-            background: #e8f5e8;
-            color: #2e7d32;
-            padding: 10px;
-            border-radius: 4px;
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .warns-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .warns-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: grid;
+            grid-template-columns: 80px 1fr 2fr 200px;
+            gap: 15px;
+            font-weight: bold;
+        }
+
+        .warns-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .warn-item {
+            display: grid;
+            grid-template-columns: 80px 1fr 2fr 200px;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            align-items: center;
+        }
+
+        .warn-item:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .warn-item:hover {
+            background: #e3f2fd;
+        }
+
+        .warn-id {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .user-id {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9rem;
+        }
+
+        .reason {
+            color: #495057;
+            line-height: 1.4;
+        }
+
+        .date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
             margin: 10px 0;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .warns-header, .warn-item {
+                grid-template-columns: 60px 1fr 1fr;
+            }
+            
+            .date {
+                display: none;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>📋 Список предупреждений</h1>
-    <div id="warns-container">
-        <div class="loading">Загрузка данных...</div>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Система предупреждений</h1>
+            <p>Мониторинг и управление предупреждениями пользователей</p>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Введите ID пользователя для поиска...">
+                <button onclick="searchWarns()">🔍 Поиск</button>
+                <button onclick="clearSearch()">🔄 Сброс</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <h3 id="totalWarns">0</h3>
+                    <p>Всего предупреждений</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="todayWarns">0</h3>
+                    <p>Сегодня</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="uniqueUsers">0</h3>
+                    <p>Уникальных пользователей</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="warns-container">
+            <div class="warns-header">
+                <div>ID</div>
+                <div>Пользователь</div>
+                <div>Причина</div>
+                <div>Дата</div>
+            </div>
+            <div class="warns-list" id="warnsList">
+                <div class="loading">Загрузка данных...</div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        async function loadWarns() {
-            const container = document.getElementById('warns-container')
-            
-            try {
-                container.innerHTML = '<div class="loading">🔄 Загрузка данных из Supabase...</div>'
-                
-                console.log('Fetching from /api/warns...')
-                const response = await fetch('/api/warns')
-                const result = await response.json()
-                
-                console.log('API Response:', result)
-                
-                if (!response.ok) {
-                    throw new Error(`Ошибка API: ${response.status} - ${JSON.stringify(result)}`)
-                }
-
-                container.innerHTML = ''
-
-                if (!result || result.length === 0) {
-                    container.innerHTML = `
-                        <div class="warn-item">
-                            ✅ В таблице user_warns нет предупреждений
-                            <div class="success">
-                                Подключение к Supabase работает! Таблица пустая.
-                            </div>
-                        </div>
-                    `
-                    return
-                }
-
-                // Отображаем данные из Supabase
-                result.forEach(warn => {
-                    const warnElement = document.createElement('div')
-                    warnElement.className = 'warn-item'
-                    
-                    const date = new Date(warn.created_at).toLocaleDateString('ru-RU')
-                    const time = new Date(warn.created_at).toLocaleTimeString('ru-RU')
-                    
-                    warnElement.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div>
-                                <strong>👤 Пользователь:</strong> ${warn.user_id}<br>
-                                <strong>📝 Причина:</strong> ${warn.reason || 'Не указана'}<br>
-                                <strong>📅 Дата:</strong> ${date} ${time}
-                            </div>
-                            <small style="color: #666;">ID: ${warn.id}</small>
-                        </div>
-                    `
-                    
-                    container.appendChild(warnElement)
-                })
-
-                // Показываем статистику
-                const stats = document.createElement('div')
-                stats.className = 'success'
-                stats.innerHTML = `✅ Успешно загружено ${result.length} предупреждений из Supabase`
-                container.appendChild(stats)
-
-            } catch (error) {
-                console.error('Frontend Error:', error)
-                container.innerHTML = `
-                    <div class="error">
-                        ❌ Ошибка загрузки данных
-                        <br><br>
-                        <strong>Детали:</strong> ${error.message}
-                        <br><br>
-                        <strong>Что проверить:</strong>
-                        <ul style="text-align: left; margin: 10px 0;">
-                            <li>Environment Variables в Vercel</li>
-                            <li>API route /api/warns работает</li>
-                            <li>Supabase таблица user_warns существует</li>
-                        </ul>
-                        <button onclick="location.reload()">🔄 Обновить страницу</button>
-                        <button onclick="testAPI()">🧪 Тестировать API</button>
-                    </div>
-                `
-            }
-        }
-
-        // Функция для тестирования API
-        async function testAPI() {
-            try {
-                const response = await fetch('/api/warns')
-                const result = await response.json()
-                alert(`API Test:\nStatus: ${response.status}\nData: ${JSON.stringify(result, null, 2)}`)
-            } catch (error) {
-                alert(`API Test Failed:\n${error.message}`)
-            }
-        }
-
-        // Загружаем данные при загрузке страницы
-        document.addEventListener('DOMContentLoaded', loadWarns)
-
-        // Добавляем кнопку обновления внизу
-        document.addEventListener('DOMContentLoaded', function() {
-            const refreshBtn = document.createElement('button')
-            refreshBtn.textContent = '🔄 Обновить данные'
-            refreshBtn.onclick = loadWarns
-            refreshBtn.style.marginTop = '20px'
-            document.body.appendChild(refreshBtn)
-        })
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
 </body>
 </html>
