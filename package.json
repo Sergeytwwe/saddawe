@@ -2,7 +2,7 @@
   "name": "supabase-warns-site",
   "version": "1.0.0",
   "scripts": {
-    "build": "mkdir -p public && cp index.html public/ && cp app.js public/"
+    "build": "mkdir -p public && cp index.html public/ && cp app.js public/ && node replace-env.js"
   },
   "devDependencies": {
     "@vercel/static-build": "^1.0.0"
